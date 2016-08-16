@@ -22,7 +22,7 @@ module ParallelSplitTest
       start = Time.now.to_f
       result = yield
       runtime = Time.now.to_f - start
-      out.puts "Took %.2f seconds with #{ParallelSplitTest.processes} processes" % runtime
+      out.puts "Took %.2f seconds with #{ParallelSplitTest.processes} processes including %.2f seconds ramp-up time" % [runtime, ParallelSplitTest.ramp_up_time]
       result
     end
   end

@@ -19,14 +19,23 @@ module ParallelSplitTest
 
       processes = ParallelSplitTest.choose_number_of_processes
       out.puts "Running examples in #{processes} processes"
+      out.puts "Ramp up time: #{ParallelSplitTest.ramp_up_time}"
 
       results = Parallel.in_processes(processes) do |process_number|
+        # binding.pry
         ParallelSplitTest.example_counter = 0
         ParallelSplitTest.process_number = process_number
         set_test_env_number(process_number)
         modify_out_file_in_args(process_number) if out_file
         out = OutputRecorder.new(out)
         setup_copied_from_rspec(err, out)
+
+        delay = delay_before_each_thread(ParallelSplitTest.ramp_up_time.to_f) * ParallelSplitTest.process_number
+        puts "Process No.#{ParallelSplitTest.process_number} will be delayed for #{delay.to_s} seconds"
+        # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} before sleep"
+        sleep delay
+        # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} after sleep"
+
         [run_group_of_tests, out.recorded]
       end
 
@@ -82,12 +91,26 @@ module ParallelSplitTest
 
     def run_group_of_tests
       example_count = @world.example_count / ParallelSplitTest.processes
+      # delay = delay_before_each_thread(ENV['RAMP_UP_TIME'].to_i) * ParallelSplitTest.process_number
+      # puts "#{ParallelSplitTest.process_number} process would sleep #{delay.to_s}"
+      # # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} before sleep"
+      # sleep delay
+      # # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} after sleep"
 
       @configuration.reporter.report(example_count) do |reporter|
         groups = @world.example_groups
         results = groups.map {|g| g.run(reporter)}
         results.all? ? 0 : @configuration.failure_exit_code
       end
+    end
+
+    # calculate ramp-up delay before number of threads
+    def delay_before_each_thread(ramp_up_time)
+      # binding.pry if ParallelSplitTest.process_number == 1
+      # ramp_up_time/(ParallelSplitTest.choose_number_of_processes - 1)
+      processes = ParallelSplitTest.choose_number_of_processes
+
+      processes == 1 ? 0 : ramp_up_time / (processes - 1)
     end
 
     # https://github.com/rspec/rspec-core/blob/6ee92a0d47bcb1f3abcd063dca2cee005356d709/lib/rspec/core/runner.rb#L93
