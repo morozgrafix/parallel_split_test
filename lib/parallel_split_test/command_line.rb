@@ -110,7 +110,7 @@ module ParallelSplitTest
       # ramp_up_time/(ParallelSplitTest.choose_number_of_processes - 1)
       processes = ParallelSplitTest.choose_number_of_processes
 
-      processes == 1 ? 0 : ramp_up_time / (processes - 1)
+      processes == 1 ? 0 : (ramp_up_time / (processes - 1)).round(2)
     end
 
     # https://github.com/rspec/rspec-core/blob/6ee92a0d47bcb1f3abcd063dca2cee005356d709/lib/rspec/core/runner.rb#L93
