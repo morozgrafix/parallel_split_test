@@ -30,7 +30,7 @@ module ParallelSplitTest
         out = OutputRecorder.new(out)
         setup_copied_from_rspec(err, out)
 
-        delay = delay_before_each_thread(ParallelSplitTest.ramp_up_time.to_f) * ParallelSplitTest.process_number
+        delay = (delay_before_each_thread(ParallelSplitTest.ramp_up_time.to_f) * ParallelSplitTest.process_number).round(2)
         puts "Process No.#{ParallelSplitTest.process_number} will be delayed for #{delay.to_s} seconds"
         # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} before sleep"
         sleep delay
@@ -110,7 +110,7 @@ module ParallelSplitTest
       # ramp_up_time/(ParallelSplitTest.choose_number_of_processes - 1)
       processes = ParallelSplitTest.choose_number_of_processes
 
-      processes == 1 ? 0 : (ramp_up_time / (processes - 1)).round(2)
+      processes == 1 ? 0 : ramp_up_time / (processes - 1)
     end
 
     # https://github.com/rspec/rspec-core/blob/6ee92a0d47bcb1f3abcd063dca2cee005356d709/lib/rspec/core/runner.rb#L93
