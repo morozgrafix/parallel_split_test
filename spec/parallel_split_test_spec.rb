@@ -113,14 +113,15 @@ describe ParallelSplitTest do
           describe "Y" do
             #{(3...6).to_a.map{|i| "it{ puts 'it-ran-"+ i.to_s+"-in-'+ENV['TEST_ENV_NUMBER'].to_s + '-' }" }.join("\n")}
             describe "Y" do
-              #{(6...9).to_a.map{|i| "it{ puts 'it-ran-"+ i.to_s+"-in-'+ENV['TEST_ENV_NUMBER'].to_s + '-' }" }.join("\n")}
+              #{(6...11).to_a.map{|i| "it{ puts 'it-ran-"+ i.to_s+"-in-'+ENV['TEST_ENV_NUMBER'].to_s + '-' }" }.join("\n")}
             end
           end
         end
         RUBY
         result = parallel_split_test "xxx_spec.rb", :process_count => 3
-        expect(result.scan('3 examples, 0 failures').size).to eq(6)
-        expect(result.scan(/it-ran-.-in-.?-/).size).to eq(9)
+        expect(result.scan('4 examples, 0 failures').size).to eq(4)
+        expect(result.scan('3 examples, 0 failures').size).to eq(2)
+        expect(result.scan(/it-ran-\d+-in-(\d+)?-/).size).to eq(11)
       end
 
       it "runs faster" do
@@ -134,7 +135,7 @@ describe ParallelSplitTest do
         end
         RUBY
 
-        expect(time{ parallel_split_test "xxx_spec.rb" }).to be < 3
+        expect(time{ parallel_split_test "xxx_spec.rb" }).to be < 3 + ENV['RAMP_UP_TIME'].to_i
       end
 
       it "splits based on examples" do
@@ -148,7 +149,7 @@ describe ParallelSplitTest do
         RUBY
 
         result = nil
-        expect(time{ result = parallel_split_test "xxx_spec.rb" }).to be < 3
+        expect(time{ result = parallel_split_test "xxx_spec.rb" }).to be < 3 + ENV['RAMP_UP_TIME'].to_i
         expect(result.scan('1 example, 0 failures').size).to eq(4)
       end
 
@@ -282,7 +283,8 @@ describe ParallelSplitTest do
             end
           end
         RUBY
-        result = parallel_split_test "xxx_spec.rb --format d --out xxx.xml --no-merge"
+        run "mkdir -p output"
+        result = parallel_split_test "xxx_spec.rb --format d --out output/xxx.xml --no-merge"
         # output does not show up in stdout
         expect(result).not_to include "xxx"
         expect(result).not_to include "yyy"
@@ -291,7 +293,7 @@ describe ParallelSplitTest do
         expect(result).to include "Running examples in"
 
         # two separate out files remain
-        expect(Dir["xxx.*.xml"].sort!).to eq(["xxx.0.xml", "xxx.1.xml"].sort!)
+        expect(Dir["output/xxx.*.xml"].sort!).to eq(["output/xxx.0.xml", "output/xxx.1.xml"].sort!)
       end
     end
   end

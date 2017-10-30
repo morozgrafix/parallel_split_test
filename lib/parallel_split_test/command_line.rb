@@ -3,6 +3,7 @@ require 'parallel_split_test/output_recorder'
 require 'parallel'
 require 'rspec'
 require 'parallel_split_test/core_ext/rspec_example'
+require 'parallel_split_test/core_ext/rspec_world'
 
 module ParallelSplitTest
   class CommandLine < RSpec::Core::Runner
@@ -28,17 +29,13 @@ module ParallelSplitTest
         set_test_env_number(process_number)
         modify_out_file_in_args(process_number) if out_file
         out = OutputRecorder.new(out)
-        setup_copied_from_rspec(err, out)
 
         delay = (delay_before_each_thread(ParallelSplitTest.ramp_up_time.to_f) * ParallelSplitTest.process_number).round(2)
         puts "Process No.#{ParallelSplitTest.process_number} will be delayed for #{delay.to_s} seconds"
-        # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} before sleep"
         sleep delay
-        # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} after sleep"
 
-        [run_group_of_tests, out.recorded]
+        [super(err, out), out.recorded]
       end
-
 
       combine_out_files if out_file unless no_merge
 
@@ -50,7 +47,7 @@ module ParallelSplitTest
 
     # modify + reparse args to unify output
     def modify_out_file_in_args(process_number)
-      @args[out_file_position] = "#{out_file_basename}.#{process_number}#{File.extname(out_file)}"
+      @args[out_file_position] = "#{out_file_parent_dir}/#{out_file_basename}.#{process_number}#{File.extname(out_file)}"
       @options = RSpec::Core::ConfigurationOptions.new(@args)
     end
 
@@ -60,6 +57,10 @@ module ParallelSplitTest
 
     def out_file
       @out_file ||= @args[out_file_position] if out_file_position
+    end
+
+    def out_file_parent_dir
+      @out_file_parent_dir ||= File.expand_path("#{out_file}/../.")
     end
 
     def out_file_basename
@@ -76,7 +77,7 @@ module ParallelSplitTest
 
     def combine_out_files
       File.open(out_file, "w") do |f|
-        Dir["#{out_file_basename}.*#{File.extname(out_file)}"].each do |file|
+        Dir["#{out_file_parent_dir}/#{out_file_basename}.*#{File.extname(out_file)}"].each do |file|
           f.write File.read(file)
           File.delete(file)
         end
@@ -88,38 +89,12 @@ module ParallelSplitTest
       out.puts "Summary:"
       out.puts printed_outputs.map{|o| o[/.*\d+ failure.*/] }.join("\n")
     end
-
-    def run_group_of_tests
-      example_count = @world.example_count / ParallelSplitTest.processes
-      # delay = delay_before_each_thread(ENV['RAMP_UP_TIME'].to_i) * ParallelSplitTest.process_number
-      # puts "#{ParallelSplitTest.process_number} process would sleep #{delay.to_s}"
-      # # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} before sleep"
-      # sleep delay
-      # # puts "#{Time.now}: Process No. #{ParallelSplitTest.process_number} after sleep"
-
-      @configuration.reporter.report(example_count) do |reporter|
-        groups = @world.example_groups
-        results = groups.map {|g| g.run(reporter)}
-        results.all? ? 0 : @configuration.failure_exit_code
-      end
-    end
-
+    
     # calculate ramp-up delay before number of threads
     def delay_before_each_thread(ramp_up_time)
-      # binding.pry if ParallelSplitTest.process_number == 1
-      # ramp_up_time/(ParallelSplitTest.choose_number_of_processes - 1)
       processes = ParallelSplitTest.choose_number_of_processes
 
       processes == 1 ? 0 : ramp_up_time / (processes - 1)
-    end
-
-    # https://github.com/rspec/rspec-core/blob/6ee92a0d47bcb1f3abcd063dca2cee005356d709/lib/rspec/core/runner.rb#L93
-    def setup_copied_from_rspec(err, out)
-      @configuration.error_stream = err
-      @configuration.output_stream = out if @configuration.output_stream == $stdout
-      @options.configure(@configuration)
-      @configuration.load_spec_files
-      @world.announce_filters
     end
   end
 end
