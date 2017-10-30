@@ -20,6 +20,7 @@ module ParallelSplitTest
 
       processes = ParallelSplitTest.choose_number_of_processes
       out.puts "Running examples in #{processes} processes"
+      out.puts "Ramp up time: #{ParallelSplitTest.ramp_up_time}"
 
       results = Parallel.in_processes(processes) do |process_number|
         ParallelSplitTest.example_counter = 0
@@ -27,6 +28,11 @@ module ParallelSplitTest
         set_test_env_number(process_number)
         modify_out_file_in_args(process_number) if out_file
         out = OutputRecorder.new(out)
+
+        delay = (delay_before_each_thread(ParallelSplitTest.ramp_up_time.to_f) * ParallelSplitTest.process_number).round(2)
+        puts "Process No.#{ParallelSplitTest.process_number} will be delayed for #{delay.to_s} seconds"
+        sleep delay
+
         [super(err, out), out.recorded]
       end
 
@@ -81,6 +87,13 @@ module ParallelSplitTest
       out.puts
       out.puts "Summary:"
       out.puts printed_outputs.map{|o| o[/.*\d+ failure.*/] }.join("\n")
+    end
+
+    # calculate ramp-up delay before number of threads
+    def delay_before_each_thread(ramp_up_time)
+      processes = ParallelSplitTest.choose_number_of_processes
+
+      processes == 1 ? 0 : ramp_up_time / (processes - 1)
     end
   end
 end

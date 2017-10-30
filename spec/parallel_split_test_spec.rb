@@ -135,7 +135,7 @@ describe ParallelSplitTest do
         end
         RUBY
 
-        expect(time{ parallel_split_test "xxx_spec.rb" }).to be < 3
+        expect(time{ parallel_split_test "xxx_spec.rb" }).to be < 3 + ENV['RAMP_UP_TIME'].to_i
       end
 
       it "splits based on examples" do
@@ -149,7 +149,7 @@ describe ParallelSplitTest do
         RUBY
 
         result = nil
-        expect(time{ result = parallel_split_test "xxx_spec.rb" }).to be < 3
+        expect(time{ result = parallel_split_test "xxx_spec.rb" }).to be < 3 + ENV['RAMP_UP_TIME'].to_i
         expect(result.scan('1 example, 0 failures').size).to eq(4)
       end
 

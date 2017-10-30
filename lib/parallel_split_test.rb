@@ -2,7 +2,12 @@ require 'parallel'
 
 module ParallelSplitTest
   class << self
-    attr_accessor :example_counter, :processes, :process_number
+    attr_accessor :example_counter, :processes, :process_number, :ramp_up_time
+
+    def ramp_up_time
+      return 0 if ENV['RAMP_UP_TIME'].nil?
+      ENV['RAMP_UP_TIME']
+    end
 
     def run_example?
       self.example_counter += 1
