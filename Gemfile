@@ -3,4 +3,3 @@ gemspec
 
 gem "rake"
 gem "bump"
-gem 'pry-byebug'

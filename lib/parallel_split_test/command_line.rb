@@ -23,7 +23,6 @@ module ParallelSplitTest
       out.puts "Ramp up time: #{ParallelSplitTest.ramp_up_time}"
 
       results = Parallel.in_processes(processes) do |process_number|
-        # binding.pry
         ParallelSplitTest.example_counter = 0
         ParallelSplitTest.process_number = process_number
         set_test_env_number(process_number)
@@ -89,11 +88,10 @@ module ParallelSplitTest
       out.puts "Summary:"
       out.puts printed_outputs.map{|o| o[/.*\d+ failure.*/] }.join("\n")
     end
-    
+
     # calculate ramp-up delay before number of threads
     def delay_before_each_thread(ramp_up_time)
       processes = ParallelSplitTest.choose_number_of_processes
-
       processes == 1 ? 0 : ramp_up_time / (processes - 1)
     end
   end

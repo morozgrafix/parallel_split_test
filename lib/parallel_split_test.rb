@@ -1,5 +1,4 @@
 require 'parallel'
-require 'pry-byebug'
 
 module ParallelSplitTest
   class << self
